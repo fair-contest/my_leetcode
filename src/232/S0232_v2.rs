@@ -28,6 +28,11 @@ impl MyQueue {
     }
 
     fn empty(&self) -> bool {
+        // if self.point[0] == self.point[1] {
+        //     self.point = [0, 0];
+        //     // self.queue[0] = 0;
+        //     return true;
+        // } else { false }
         self.point[0] == self.point[1]
     }
 }
