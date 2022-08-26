@@ -3,12 +3,12 @@ class Solution {
         int maxp = prices[0];
         int minp = prices[0];
         int res = 0;
-        for(int i=0;i<prices.length;i++) {
-            if (prices[i] < minp) {
-                minp = prices[i];
-                maxp = prices[i];
+        for (int i : prices) {
+            if (i < minp) {
+                minp = i;
+                maxp = i;
             }
-            if (prices[i] > maxp) { maxp = prices[i]; }
+            if (i > maxp) { maxp = i; }
             res = Math.max((maxp - minp), res);
         }
         return res;
