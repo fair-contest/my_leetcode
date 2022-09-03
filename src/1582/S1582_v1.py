@@ -1,7 +1,17 @@
 class Solution:
     def numSpecial(self, mat: List[List[int]]) -> int:
         tmp = mat[0]
-        for i in mat[1:]:
-            if sum(i) == 1: # 筛出每行只有1个1的行
-                tmp = list(map(lambda x, y: x + y, tmp, i)) # 将矩阵所有列相加
-        return sum(filter(lambda x: x == 1, tmp)) # tmp中有多少个1，即有多少个特殊位置
+        sp = [0] if sum(tmp) == 1 else []
+        res = 0
+
+        for i, x in enumerate(mat[1:]):
+            if sum(x) == 1:
+                sp.append(i+1)
+            tmp = list(map(lambda x, y: x + y, tmp, x))
+
+        for j, x in enumerate(tmp):
+            if x == 1:
+                for i in sp:
+                    if mat[i][j] == 1:
+                        res += 1
+        return res
