@@ -15,7 +15,6 @@ impl Solution {
             res += v * 10i32.pow(idx);
             n = n / 10;
             idx += 1;
-            println!("{:?}, {:?}, {}", left, right, res);
         }
         if left == right || left == (0, 0) { return res;}
         res += left.0 * 10i32.pow(right.1)  + right.0 * 10i32.pow(left.1) - left.0 * 10i32.pow(left.1) - right.0*10i32.pow(right.1);
