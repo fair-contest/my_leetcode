@@ -24,6 +24,6 @@ int maximumSwap(int num){
         idx += 1; 
     }
     if ((left == right) | (left[0]==0 & left[1]==0)) return res;
-    res += left[0] * pow(10, right[1]) + right[0] * pow(10, left[1]) - left[0] * pow(10, left[1]) - right[0] * pow(10, right[1]);
+    res += left[0] * (pow(10, right[1]) - pow(10, left[1])) + right[0] * (pow(10, left[1]) - pow(10, right[1]));
     return res;
 }
