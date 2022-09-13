@@ -7,9 +7,9 @@ impl Solution {
         let mut idx = 0;
         let mut res = 0;
         while n != 0 {
-            let v = n % 10;
+            let v = (n % 10);
             if v > prev.0 {
-                if v >= prev.0 { prev = (v, idx);}
+                prev = (v, idx);
             } else if v == prev.0 {
                 if idx <= left.1 { right.1 = idx;}
             } else {
@@ -17,7 +17,7 @@ impl Solution {
             }
             if idx <= left.1 { right = prev;}
             res += v * 10i32.pow(idx);
-            n = n / 10;
+            n /= 10;
             idx += 1;
         }
         // 如不需要交换，直接返回res
