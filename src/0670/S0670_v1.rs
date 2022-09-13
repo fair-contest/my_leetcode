@@ -23,7 +23,7 @@ impl Solution {
         // 如不需要交换，直接返回res
         if left == right || left == (0, 0) { return res;}
         // 如需要交换，从res中减去left和right交换前对应的值，再加上交换后的值即是正确答案
-        res += left.0 * 10i32.pow(right.1)  + right.0 * 10i32.pow(left.1) - left.0 * 10i32.pow(left.1) - right.0*10i32.pow(right.1);
+        res += left.0 * (10i32.pow(right.1) - 10i32.pow(left.1)) + right.0 * (10i32.pow(left.1) - 10i32.pow(right.1));
         res
     }
 }
