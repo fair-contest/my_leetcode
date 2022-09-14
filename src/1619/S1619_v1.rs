@@ -1,26 +1,24 @@
 use std::collections::BinaryHeap;
 
+use std::collections::BinaryHeap;
+
 impl Solution {
     pub fn trim_mean(arr: Vec<i32>) -> f64 {
         let r = arr.len() / 20;
         let mut heap_min = BinaryHeap::with_capacity(r+1);
         let mut heap_max = BinaryHeap::with_capacity(r+1);
         let mut i = 0;
-        let mut j = 0;
-        let mut tmp = 0;
         let mut sum = 0;
         while i < 2 * r {
             heap_min.push(arr[i]);
             heap_max.push(-1 * arr[i+1]);
             i += 2;
         }
-        tmp = Solution::ex_heap(&mut heap_max, &mut heap_min, arr[i]);
-        while j < r-1 {
-            tmp = Solution::ex_heap(&mut heap_max, &mut heap_min, tmp);
-            j += 1;
-        }
-        sum = tmp;
+        sum = Solution::ex_heap(&mut heap_max, &mut heap_min, arr[i as usize]);
         i += 1;
+        for j in 0..(r-1) {
+            sum = Solution::ex_heap(&mut heap_max, &mut heap_min, sum);
+        }
         while i < arr.len() {
             sum += Solution::ex_heap(&mut heap_max, &mut heap_min, arr[i]);
             i += 1;
