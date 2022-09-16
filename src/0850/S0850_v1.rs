@@ -22,7 +22,8 @@ impl Solution {
                 tmp.push((k.0, k.1, k.2, k.3, Solution::rect_area(k)));
             }
         }
-        ((res + Solution::rect_area(&ar[0])) % (10i64.pow(9)+7)) as i32
+        res = if ar.is_empty() {res % (10i64.pow(9)+7)} else {ar.iter().map(|x|Solution::rect_area(x)).fold(res, |acc, x| acc + x) % (10i64.pow(9)+7)};
+        res as i32
     }
 
     fn reOverlap(a: &(i32,i32,i32,i32), b: &(i32,i32,i32,i32), v: &mut Vec<(i32, i32, i32, i32)>) {
