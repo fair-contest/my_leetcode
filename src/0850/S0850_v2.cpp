@@ -6,31 +6,32 @@ class Solution {
 public:
     int rectangleArea(vector<vector<int>>& rectangles) {
         vector<vector<int>> ar(200);
-        vector<vector<int>> tmp = rectangles;
-        const int MOD = 1000000007;
+        vector<vector<int>> tmp(200);
+        tmp = rectangles;
         long long res = 0;
-        vector<int> m = max_area(tmp, res);
+        max_area(tmp, res);
         while (ar.size() != 0) {
             ar.clear();
             for (vector<int> j : tmp) {
-                Solution::reOverlap(m, j, ar);
+                Solution::reOverlap(maxarea, j, ar);
             }
-            m = max_area(ar, res);
+            max_area(ar, res);
             if (tmp == ar) break;
             tmp = ar;
         }
-        if (ar.size() == 0) {
-            return res % MOD;
-        }
-        else {
+        if (ar.size() != 0) {
             for (vector<int> k : ar) {
                 res += Solution::vect_area(k);
             }
-            return res % MOD;
         }
+        return res % 1000000007;
     }
 
-    void reOverlap(vector<int> a, vector<int> b, vector<vector<int>>& v) {
+private:
+    vector<int> maxarea;
+    vector<int> vect;
+
+    void reOverlap(vector<int>& a, vector<int>& b, vector<vector<int>>& v) {
         if (a[0] <= b[0] && a[1] <= b[1] && a[2] >= b[2] && a[3] >= b[3]) { return; }
         else if (a[0] >= b[2] || a[1] >= b[3] || a[2] <= b[0] || a[3] <= b[1]) { v.push_back(b); }
         else if (a[0] <= b[0] && a[2] >= b[2]) {
@@ -67,12 +68,8 @@ public:
         }
     }
 
-    void push_vec(vector<vector<int>>& arr, int a, int b, int c, int d) {
-        vector<int> vect(4);
-        vect[0] = a;
-        vect[1] = b;
-        vect[2] = c;
-        vect[3] = d;
+    inline void push_vec(vector<vector<int>>& arr, int& a, int& b, int& c, int& d) {
+        vect = { a, b, c, d };
         arr.push_back(vect);
     }
 
@@ -86,12 +83,11 @@ public:
         else { return -a; }
     }
 
-    vector<int> max_area(vector<vector<int>>& x, long long& res) {
-        vector<int> max(4);
-        for (vector<int> v : x) {
-            max = (vect_area(v) > vect_area(max)) ? v : max;
+    inline void max_area(vector<vector<int>>& x, long long& res) {
+        maxarea = { 0, 0, 0, 0 };
+        for (int i = 0; i < x.size();i++) {
+            maxarea = (vect_area(x[i]) > vect_area(maxarea)) ? x[i] : maxarea;
         }
-        res += vect_area(max);
-        return max;
+        res += vect_area(maxarea);
     }
 };
