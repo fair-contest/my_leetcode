@@ -7,7 +7,7 @@ public:
     int rectangleArea(vector<vector<int>>& rectangles) {
         vector<vector<int>> ar(200);
         vector<vector<int>> tmp = rectangles;
-        const int MOD = 1e9 + 7;
+        const int MOD = 1000000007;
         long long res = 0;
         vector<int> m = max_area(tmp, res);
         while (ar.size() != 0) {
