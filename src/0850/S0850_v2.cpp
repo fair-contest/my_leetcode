@@ -9,22 +9,24 @@ public:
         vector<vector<int>> tmp = rectangles;
         const int MOD = 1e9 + 7;
         long long res = 0;
-        while (tmp.size() != 0) {
-            vector<int> m = max_area(tmp, res);
+        vector<int> m = max_area(tmp, res);
+        while (ar.size() != 0) {
             ar.clear();
             for (vector<int> j : tmp) {
                 Solution::reOverlap(m, j, ar);
             }
-            tmp.clear();
-            for (vector<int> k : ar) {
-                push_vec(tmp, k[0], k[1], k[2], k[3]);
-            }
+            m = max_area(ar, res);
+            if (tmp == ar) break;
+            tmp = ar;
         }
         if (ar.size() == 0) {
             return res % MOD;
         }
         else {
-            return (res + Solution::vect_area(ar[0])) % MOD;
+            for (vector<int> k : ar) {
+                res += Solution::vect_area(k);
+            }
+            return res % MOD;
         }
     }
 
@@ -93,24 +95,3 @@ public:
         return max;
     }
 };
-
-vector<vector<int>> arr_to_vec(int arr[3][4]) {
-    vector<vector<int>> tmp;
-    vector<int> s;
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 4; j++) {
-            s.push_back(arr[i][j]);
-        }
-        tmp.push_back(s);
-    }
-    return tmp;
-}
-
-int main(int argc, char* argv[])
-{
-    int ary[3][4] = { {1, 1, 4, 4}, {0, 1, 6, 2},{2, 0, 3, 11} };
-    vector<vector<int>> vect = arr_to_vec(ary);
-    Solution soho;
-    std::cout << soho.rectangleArea(vect);
-    return 0;
-}
