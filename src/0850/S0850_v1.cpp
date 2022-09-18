@@ -36,7 +36,7 @@ private:
     long long maxarea = 0;
     long long res = 0;
 
-    void init_tmp(vector<vector<int>>& arr) {
+    inline void init_tmp(vector<vector<int>>& arr) {
         for (vector<int> vi : arr) {
             pta.p = vi;
             pta.area = vect_area(vi);
