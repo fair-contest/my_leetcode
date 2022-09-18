@@ -1,3 +1,7 @@
+#include <iostream>
+#include <vector>
+using namespace std;
+
 class Solution {
 public:
     int rectangleArea(vector<vector<int>>& rectangles) {
