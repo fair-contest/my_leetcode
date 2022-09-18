@@ -45,8 +45,8 @@ private:
     }
 
     void reOverlap(pt_area& a, pt_area& b) {
-        if (a.p[0] <= b.p[0] && a.p[1] <= b.p[1] && a.p[2] >= b.p[2] && a.p[3] >= b.p[3]) { return; }
-        else if (a.p[0] >= b.p[2] || a.p[1] >= b.p[3] || a.p[2] <= b.p[0] || a.p[3] <= b.p[1]) { ar.push_back(b); }
+        if (a.p[0] >= b.p[2] || a.p[1] >= b.p[3] || a.p[2] <= b.p[0] || a.p[3] <= b.p[1]) { ar.push_back(b); }
+        else if (a.p[0] <= b.p[0] && a.p[1] <= b.p[1] && a.p[2] >= b.p[2] && a.p[3] >= b.p[3]) { return; }
         else if (a.p[0] <= b.p[0] && a.p[2] >= b.p[2]) {
             if (a.p[1] > b.p[1]) {
                 if (a.p[3] < b.p[3]) { push_vec(b.p[0], a.p[3], b.p[2], b.p[3]); push_vec(b.p[0], b.p[1], b.p[2], a.p[1]); }
