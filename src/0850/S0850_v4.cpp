@@ -31,10 +31,9 @@ public:
 
 private:
     vector<int> maxarea;
-    vector<int> vect;
     long long res = 0;
 
-    void reOverlap(vector<int>& a, vector<int>& b, vector<vector<int>>& v) {
+    static void reOverlap(vector<int>& a, vector<int>& b, vector<vector<int>>& v) {
         if (a[0] <= b[0] && a[1] <= b[1] && a[2] >= b[2] && a[3] >= b[3]) { return; }
         else if (a[0] >= b[2] || a[1] >= b[3] || a[2] <= b[0] || a[3] <= b[1]) { v.push_back(b); }
         else if (a[0] <= b[0] && a[2] >= b[2]) {
@@ -71,8 +70,8 @@ private:
         }
     }
 
-    inline void push_vec(vector<vector<int>>& arr, int& a, int& b, int& c, int& d) {
-        vect = { a, b, c, d };
+    static inline void push_vec(vector<vector<int>>& arr, int& a, int& b, int& c, int& d) {
+        vector<int> vect = { a, b, c, d };
         arr.push_back(vect);
     }
 
