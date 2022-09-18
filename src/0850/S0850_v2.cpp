@@ -8,7 +8,6 @@ public:
         vector<vector<int>> ar(50);
         vector<vector<int>> tmp(50);
         tmp = rectangles;
-        long long res = 0;
         max_area(tmp, res);
         while (ar.size() != 0) {
             ar.clear();
@@ -30,8 +29,7 @@ public:
 private:
     vector<int> maxarea;
     vector<int> vect;
-    long long fa;
-    long long fb;
+    long long res = 0;
 
     void reOverlap(vector<int>& a, vector<int>& b, vector<vector<int>>& v) {
         if (a[0] <= b[0] && a[1] <= b[1] && a[2] >= b[2] && a[3] >= b[3]) { return; }
@@ -75,7 +73,9 @@ private:
         arr.push_back(vect);
     }
 
-    long long vect_area(vector<int>& x) {
+    static inline long long vect_area(vector<int>& x) {
+        static long long fa;
+        static long long fb;
         fa = x[2];
         fa -= x[0];
         fb = x[3];
@@ -87,10 +87,9 @@ private:
 
     inline void max_area(vector<vector<int>>& x, long long& res) {
         maxarea = { 0, 0, 0, 0 };
-        for (int i = 0; i < x.size();i++) {
+        for (int i = 0; i < x.size(); i++) {
             maxarea = (vect_area(x[i]) > vect_area(maxarea)) ? x[i] : maxarea;
         }
         res += vect_area(maxarea);
     }
 };
-
