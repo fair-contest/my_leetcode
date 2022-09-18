@@ -5,83 +5,112 @@ using namespace std;
 class Solution {
 public:
     int rectangleArea(vector<vector<int>>& rectangles) {
-        vector<tuple<int, int, int, int>> ar(200);
-        vector<tuple<int, int, int, int, long long>> tmp(200);
-        const int MOD = 1e9+7;
-        long long res = 0;
-        for (int i=0; i<rectangles.size(); i++) {
-            tmp[i] = make_tuple(rectangles[i][0], rectangles[i][1], rectangles[i][2], rectangles[i][3], Solution::vect_area(rectangles[i]));
-        }
-        while (ar.size() != 1) {
-            tuple<int, int, int, int, long long> m = max_area(tmp);
-            res += get<4>(m);
+        init_tmp(rectangles);
+        max_area(tmp);
+        while (tmp.size() > 1) {
             ar.clear();
-            for (auto j : tmp) {
-                Solution::reOverlap(make_tuple(get<0>(m), get<1>(m), get<2>(m), get<3>(m)), make_tuple(get<0>(j), get<1>(j), get<2>(j), get<3>(j)), ar);
+            for (pt_area j : tmp) {
+                Solution::reOverlap(cur, j);
             }
-            tmp.clear();
-            for (auto k : ar) {
-                tmp.push_back(make_tuple(get<0>(k), get<1>(k), get<2>(k), get<3>(k), Solution::rect_area(k)));
+            if (cmp_vec(tmp, ar)) break;
+            max_area(ar);
+            tmp = ar;
+        }
+        if (ar.size() > 1) {
+            for (pt_area k : ar) {
+                res += k.area;
             }
         }
-        if (ar.size() == 0) {
-            return res % MOD;
-        } else {
-            return (res + Solution::rect_area(ar[0])) % MOD;
+        return res % 1000000007;
+    }
+
+private:
+    struct pt_area { vector<int> p; long long area; };
+    vector<pt_area> ar;
+    vector<pt_area> tmp;
+    vector<int> vect;
+    pt_area pta = { {0, 0, 0, 0}, 0 };
+    pt_area cur = { {0, 0, 0, 0}, 0 };
+    long long fa = 0;
+    long long fb = 0;
+    long long maxarea = 0;
+    long long res = 0;
+
+    void init_tmp(vector<vector<int>>& arr) {
+        for (vector<int> vi : arr) {
+            pta.p = vi;
+            pta.area = vect_area(vi);
+            tmp.push_back(pta);
         }
     }
 
-    void reOverlap(tuple<int, int, int, int> a, tuple<int, int, int, int> b, vector<tuple<int, int, int, int>> &v) {
-        if (get<0>(a)<=get<0>(b) && get<1>(a)<=get<1>(b) && get<2>(a)>=get<2>(b) && get<3>(a)>=get<3>(b)) {return;}
-        else if (get<0>(a)>=get<2>(b) || get<1>(a)>=get<3>(b) || get<2>(a)<=get<0>(b) || get<3>(a)<=get<1>(b)) {v.push_back(b);}
-        else if (get<0>(a)<=get<0>(b) && get<2>(a)>=get<2>(b)) {
-            if (get<1>(a)>get<1>(b)) {
-                if (get<3>(a)<get<3>(b)) {v.push_back(make_tuple(get<0>(b), get<3>(a), get<2>(b), get<3>(b))); v.push_back(make_tuple(get<0>(b), get<1>(b), get<2>(b), get<1>(a)));}
-                else {if (get<1>(a)<get<3>(b)) {v.push_back(make_tuple(get<0>(b), get<1>(b), get<2>(b), get<1>(a)));}}
-            } else {if (get<3>(a)>get<1>(b) && get<3>(a)<get<3>(b)) {v.push_back(make_tuple(get<0>(b), get<3>(a), get<2>(b), get<3>(b)));}}
-        }
-        else if (get<1>(a)<=get<1>(b) && get<3>(a)>=get<3>(b)) {
-            if (get<0>(a)>get<0>(b)) {
-                if (get<2>(a)<get<2>(b)) {v.push_back(make_tuple(get<2>(a), get<1>(b), get<2>(b), get<3>(b))); v.push_back(make_tuple(get<0>(b), get<1>(b), get<0>(a), get<3>(b)));}
-                else {if (get<0>(a)<get<2>(b)) {v.push_back(make_tuple(get<0>(b), get<1>(b), get<0>(a), get<3>(b)));}}
-            } else {if (get<2>(a)<get<2>(b) && get<2>(a)>get<0>(b)) {v.push_back(make_tuple(get<2>(a), get<1>(b), get<2>(b), get<3>(b)));}}
-        }
-        else if (get<0>(a)>get<0>(b)) {
-            if (get<3>(a)>get<3>(b)) {
-                if (get<2>(a)>=get<2>(b)) {v.push_back(make_tuple(get<0>(b), get<1>(b), get<2>(b), get<1>(a))); v.push_back(make_tuple(get<0>(b), get<1>(a), get<0>(a), get<3>(b)));}
-                else {v.push_back(make_tuple(get<0>(b), get<1>(b), get<2>(b), get<1>(a))); v.push_back(make_tuple(get<0>(b), get<1>(a), get<0>(a), get<3>(b))); v.push_back(make_tuple(get<2>(a), get<1>(a), get<2>(b), get<3>(b)));}
+    void reOverlap(pt_area& a, pt_area& b) {
+        if (a.p[0] <= b.p[0] && a.p[1] <= b.p[1] && a.p[2] >= b.p[2] && a.p[3] >= b.p[3]) { return; }
+        else if (a.p[0] >= b.p[2] || a.p[1] >= b.p[3] || a.p[2] <= b.p[0] || a.p[3] <= b.p[1]) { ar.push_back(b); }
+        else if (a.p[0] <= b.p[0] && a.p[2] >= b.p[2]) {
+            if (a.p[1] > b.p[1]) {
+                if (a.p[3] < b.p[3]) { push_vec(b.p[0], a.p[3], b.p[2], b.p[3]); push_vec(b.p[0], b.p[1], b.p[2], a.p[1]); }
+                else { if (a.p[1] < b.p[3]) { push_vec(b.p[0], b.p[1], b.p[2], a.p[1]); } }
             }
-            else if (get<1>(a)<get<1>(b)) {
-                if (get<2>(a)>=get<2>(b)) {v.push_back(make_tuple(get<0>(b), get<3>(a), get<2>(b), get<3>(b))); v.push_back(make_tuple(get<0>(b), get<1>(b), get<0>(a), get<3>(a)));}
-                else {v.push_back(make_tuple(get<0>(b), get<3>(a), get<2>(b), get<3>(b))); v.push_back(make_tuple(get<0>(b), get<1>(b), get<0>(a), get<3>(a))); v.push_back(make_tuple(get<2>(a), get<1>(b), get<2>(b), get<3>(b)));}
-            } else {v.push_back(make_tuple(get<0>(b), get<1>(b), get<0>(a), get<3>(b))); v.push_back(make_tuple(get<0>(a), get<3>(a), get<2>(b), get<3>(b))); v.push_back(make_tuple(get<0>(a), get<1>(b), get<2>(b), get<1>(a)));}
+            else { if (a.p[3] > b.p[1] && a.p[3] < b.p[3]) { push_vec(b.p[0], a.p[3], b.p[2], b.p[3]); } }
+        }
+        else if (a.p[1] <= b.p[1] && a.p[3] >= b.p[3]) {
+            if (a.p[0] > b.p[0]) {
+                if (a.p[2] < b.p[2]) { push_vec(a.p[2], b.p[1], b.p[2], b.p[3]); push_vec(b.p[0], b.p[1], a.p[0], b.p[3]); }
+                else { if (a.p[0] < b.p[2]) { push_vec(b.p[0], b.p[1], a.p[0], b.p[3]); } }
+            }
+            else { if (a.p[2]<b.p[2] && a.p[2]>b.p[0]) { push_vec(a.p[2], b.p[1], b.p[2], b.p[3]); } }
+        }
+        else if (a.p[0] > b.p[0]) {
+            if (a.p[3] > b.p[3]) {
+                if (a.p[2] >= b.p[2]) { push_vec(b.p[0], b.p[1], b.p[2], a.p[1]); push_vec(b.p[0], a.p[1], a.p[0], b.p[3]); }
+                else { push_vec(b.p[0], b.p[1], b.p[2], a.p[1]); push_vec(b.p[0], a.p[1], a.p[0], b.p[3]); push_vec(a.p[2], a.p[1], b.p[2], b.p[3]); }
+            }
+            else if (a.p[1] < b.p[1]) {
+                if (a.p[2] >= b.p[2]) { push_vec(b.p[0], a.p[3], b.p[2], b.p[3]); push_vec(b.p[0], b.p[1], a.p[0], a.p[3]); }
+                else { push_vec(b.p[0], a.p[3], b.p[2], b.p[3]); push_vec(b.p[0], b.p[1], a.p[0], a.p[3]); push_vec(a.p[2], b.p[1], b.p[2], b.p[3]); }
+            }
+            else { push_vec(b.p[0], b.p[1], a.p[0], b.p[3]); push_vec(a.p[0], a.p[3], b.p[2], b.p[3]); push_vec(a.p[0], b.p[1], b.p[2], a.p[1]); }
         }
         else {
-            if (get<2>(a)<get<2>(b)) {
-                if (get<3>(a)>get<3>(b)) {v.push_back(make_tuple(get<0>(b), get<1>(b), get<2>(b), get<1>(a))); v.push_back(make_tuple(get<2>(a), get<1>(a), get<2>(b), get<3>(b)));}
-                else if (get<1>(a)<get<1>(b)) {v.push_back(make_tuple(get<0>(b), get<3>(a), get<2>(b), get<3>(b))); v.push_back(make_tuple(get<2>(a), get<1>(b), get<2>(b), get<3>(a)));}
-                else {v.push_back(make_tuple(get<0>(b), get<1>(b), get<2>(a), get<1>(a))); v.push_back(make_tuple(get<2>(a), get<1>(b), get<2>(b), get<3>(b))); v.push_back(make_tuple(get<0>(b), get<3>(a), get<2>(a), get<3>(b)));}
+            if (a.p[2] < b.p[2]) {
+                if (a.p[3] > b.p[3]) { push_vec(b.p[0], b.p[1], b.p[2], a.p[1]); push_vec(a.p[2], a.p[1], b.p[2], b.p[3]); }
+                else if (a.p[1] < b.p[1]) { push_vec(b.p[0], a.p[3], b.p[2], b.p[3]); push_vec(a.p[2], b.p[1], b.p[2], a.p[3]); }
+                else { push_vec(b.p[0], b.p[1], a.p[2], a.p[1]); push_vec(a.p[2], b.p[1], b.p[2], b.p[3]); push_vec(b.p[0], a.p[3], a.p[2], b.p[3]); }
             }
         }
     }
 
-    long long rect_area(tuple<int, int, int, int>& x) {
-        long long r = (get<2>(x) - get<0>(x));
-        r *= (get<3>(x) - get<1>(x));
-        if (r>=0) {return r;} else {return -r;}
+    inline void push_vec(int& a, int& b, int& c, int& d) {
+        pta.p = {a, b, c, d};
+        pta.area = vect_area(pta.p);
+        ar.push_back(pta);
     }
 
-    long long vect_area(vector<int>& x){
-        long long r = (x[2] - x[0]);
-        r *= (x[3] - x[1]);
-        if (r>=0) {return r;} else {return -r;}
+    long long vect_area(vector<int>& x) {
+        fa = x[2];
+        fa -= x[0];
+        fb = x[3];
+        fb -= x[1];
+        fa *= fb;
+        if (fa >= 0) { return fa; }
+        else { return -fa; }
     }
 
-    tuple<int, int, int, int, long long> max_area(vector<tuple<int, int, int, int, long long>>& x) {
-        tuple<int, int, int, int, long long> max;
-        for (auto v : x) {
-            max = (get<4>(v) > get<4>(max)) ? v : max;
+    inline void max_area(vector<pt_area>& x) {
+        pta = { {0, 0, 0, 0}, 0 };
+        for (int i = 0; i < x.size(); i++) {
+            pta = (x[i].area > pta.area) ? x[i] : pta;
         }
-        return max;
+        cur = pta;
+        res += cur.area;
+    }
+
+    inline bool cmp_vec(vector<pt_area>& a, vector<pt_area>& b) {
+        if (a.size() != b.size()) return false;
+        for (int q = 0; q < a.size();q++) {
+            if (a[q].p != b[q].p) return false;
+        }
+        return true;
     }
 };
