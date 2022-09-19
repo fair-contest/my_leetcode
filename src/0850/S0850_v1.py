@@ -17,6 +17,8 @@ class Solution:
         if len(ar) > 0:
             for k in ar:
                 res += k[4]
+        if res == 0:
+            res += tmp[0][4] 
         return res % 1000000007
 
     def vectArea(self, x):
