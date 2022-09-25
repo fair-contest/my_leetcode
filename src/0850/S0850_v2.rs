@@ -1,5 +1,6 @@
 impl Solution {
     pub fn rectangle_area(rectangles: Vec<Vec<i32>>) -> i32 {
+        if rectangles.len() == 1 {return (Solution::vect_area(&rectangles[0]) % 1000000007) as i32}
         let mut ar: Vec<(i32, i32, i32, i32)> = Vec::with_capacity(50);
         let mut tmp: Vec<(i32, i32, i32, i32, i64)> = Vec::with_capacity(50);
         let mut res = 0i64;
@@ -14,7 +15,6 @@ impl Solution {
             for j in tmp.iter() {
                 Solution::reOverlap(&(max_rect.0, max_rect.1, max_rect.2, max_rect.3), &(j.0, j.1, j.2, j.3), &mut ar);
             }
-            println!("before, {:?}, {:?}", ar, tmp);
             if Solution::ar_cmp_tmp(&ar, &tmp) {break;}
             tmp.clear();
             for k in ar.iter() {
