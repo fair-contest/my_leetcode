@@ -16,7 +16,7 @@ public:
             }
             max_area(ar, res);
             if (tmp == ar) break;
-            tmp = ar;
+            swap(tmp, ar);
         }
         if (ar.size() != 0) {
             for (vector<int> k : ar) {
