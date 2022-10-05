@@ -30,4 +30,4 @@ class Solution:
             cnt += 1
         if arr[cnt:cnt+r] != arr[j:]:
             return [-1, -1]
-        return [i, j]
+        return [i, cnt+r]
