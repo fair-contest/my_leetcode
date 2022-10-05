@@ -1,5 +1,5 @@
 class Solution:
-    def threeEqualParts(self, arr):
+    def threeEqualParts(self, arr: List[int]) -> List[int]:
         cnt = arr.count(1)
         if cnt == 0:
             return [0, len(arr)-1] # 全是0时i, j取头尾
