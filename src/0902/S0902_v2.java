@@ -30,6 +30,8 @@ class Solution {
             res += plist[i] * opt;
             if (check == opt) break;
         }
+        nums = null;
+        plist = null;
         return (i == nlen && check != 0) ? res + check - opt : res;
     }
 
