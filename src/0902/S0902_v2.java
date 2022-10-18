@@ -11,7 +11,7 @@ class Solution {
             res += dlen;
             if (nlen > 2) {
                 for (int i=nlen-3;i>=0;i--) {
-                //题目digits和n长度不超9，所以下面这行代码计算范围最大也只是9的8次方，不会溢出。
+                //题目digits长度不超9和n不大于10的9次方，所以下面这行乘法代码计算最大也只是9的9次方，不会溢出。
                     plist[i] = plist[i+1] * dlen;
                     res += plist[i];
                 }
@@ -34,7 +34,7 @@ class Solution {
     }
 
     private int[] nToArray(int n) {
-        int[] arr = new int[9];
+        int[] arr = new int[10];
         int i = 0;
         while (n > 0) {
             arr[i] = n % 10;
