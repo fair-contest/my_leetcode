@@ -1,3 +1,5 @@
+#define MIN(i, j) (((i) < (j)) ? (i) : (j))
+
 bool cmpWord(char* p, int startp, int endp, char* q) {
     for (int i = 0; i < endp-startp; ++i) {
         if (p[startp+i] != q[i]) return false;
@@ -10,7 +12,7 @@ int maxRepeating(char * sequence, char * word){
     if (m < n) return 0;
     int res = 0;
     int i = n, j = m - n + 1, cur = 0;
-    for (int k = 0;k < j;++k) {
+    for (int k = 0;k < MIN(j, n);++k) {
         if (cmpWord(sequence, k, n+k, word)) {
             res = 1;
             break;
