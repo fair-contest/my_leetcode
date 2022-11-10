@@ -13,7 +13,7 @@ class Solution:
         nxt = deque()
         passed = {x}
         while 1:
-            c = copy.deepcopy(x[2])
+            c = x[2]
             if (k := ord(grid[x[0]][x[1]]) - 97) >= 0 and k <= 6:
                 c = c | (1 << k) # 将c的第k位设为1
                 if c == need_keys:
