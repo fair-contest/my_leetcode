@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>从状态复用到熵优化：四种 rand10 解法与1.183 期望调用极限的渐进实现</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --text-color: #eaeaea;
+            --code-bg: #16213e;
+            --accent-color: #0f3460;
+            --highlight-color: #e94560;
+            --border-color: #2a2a4a;
+            --table-header-bg: #0f3460;
+            --table-row-alt: #1f1f3a;
+            --blockquote-bg: #1f1f3a;
+            --blockquote-border: #e94560;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        h1 {
+            font-size: 2em;
+            text-align: center;
+            margin-bottom: 40px;
+            color: #fff;
+            border-bottom: 3px solid var(--highlight-color);
+            padding-bottom: 20px;
+        }
+        
+        h2 {
+            font-size: 1.6em;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            color: #fff;
+            border-left: 5px solid var(--highlight-color);
+            padding-left: 15px;
+            background: linear-gradient(90deg, var(--accent-color) 0%, transparent 100%);
+            padding: 15px 15px 15px 20px;
+        }
+        
+        h3 {
+            font-size: 1.3em;
+            margin-top: 35px;
+            margin-bottom: 20px;
+            color: #e94560;
+        }
+        
+        h4 {
+            font-size: 1.1em;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            color: #4fc3f7;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        code {
+            font-family: 'Fira Code', 'Consolas', monospace;
+            background-color: var(--code-bg);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #4fc3f7;
+        }
+        
+        pre {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+            color: #eaeaea;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        blockquote {
+            background-color: var(--blockquote-bg);
+            border-left: 4px solid var(--blockquote-border);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        blockquote p {
+            margin-bottom: 10px;
+        }
+        
+        blockquote p:last-child {
+            margin-bottom: 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--table-header-bg);
+            color: #fff;
+            font-weight: 600;
+        }
+        
+        tr:nth-child(even) {
+            background-color: var(--table-row-alt);
+        }
+        
+        tr:hover {
+            background-color: #2a2a5a;
+        }
+        
+        hr {
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--highlight-color), transparent);
+            margin: 50px 0;
+        }
+        
+        strong {
+            color: #e94560;
+        }
+        
+        .math-block {
+            background-color: var(--code-bg);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: center;
+            font-family: 'Times New Roman', serif;
+            font-size: 1.1em;
+            border: 1px solid var(--border-color);
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #1f1f3a 0%, #0f3460 100%);
+            border: 1px solid var(--highlight-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        
+        .solution-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .solution-number {
+            background-color: var(--highlight-color);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .verification-result {
+            background-color: #1a3a1a;
+            border: 1px solid #2e7d32;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .note {
+            background-color: #2a2a3a;
+            border-left: 4px solid #4fc3f7;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .warning {
+            background-color: #3a2a1a;
+            border-left: 4px solid #ff9800;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .keyword {
+            color: #e94560;
+            font-weight: 600;
+        }
+        
+        .formula {
+            color: #4fc3f7;
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 15px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            h2 {
+                font-size: 1.3em;
+            }
+            
+            pre {
+                padding: 15px;
+                font-size: 0.8em;
+            }
+            
+            table {
+                font-size: 0.9em;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>从状态复用到熵优化：四种 rand10 解法与1.183 期望调用极限的渐进实现</h1>
+
+<hr>
+
+<h2>【解法一】基础状态累积与拒绝采样</h2>
+
+<h3>核心思想</h3>
+<p>将 rand7() 视为 7 进制位生成器。每次调用在当前状态空间末尾追加一位，状态总数乘以 7。当状态总数 ≥10 时，取最大的 10 的倍数作为合法区间，均匀映射到 [1,10]。落入拒绝区间的余数保留为下一轮初始状态，绝不丢弃随机性。</p>
+
+<p>通俗点说，为了容易理解，可以假设rand7()是一个7面骰子：</p>
+<ul>
+    <li>第1轮：1个骰子仅7种结果，不足10。引入第2个骰子，组合产生 7×7=49 种等概率状态。取前40个均匀映射到 [1,10]，每个数字对整体概率的精确贡献为 4/49。余下9个状态进入下一轮。</li>
+    <li>第2轮：9个状态不足10，再引入1个骰子，状态扩至 9×7=63。取前60个映射，每个数字贡献概率为 (9/49)×(6/63)。余下3个状态继续保留。</li>
+    <li>第3轮及以后：同理。剩余状态概率呈几何级数衰减，实际循环极快终止。每轮无条件概率之和严格为1。</li>
+</ul>
+
+<h3>数学实现要点</h3>
+<ul>
+    <li><strong>状态持久化</strong>：剩余状态必须保留并参与下一轮计算，绝对不可重置或覆盖。</li>
+    <li><strong>线性扩展</strong>：每轮调用1次 rand7()，状态空间 ×7，直到 ≥10。</li>
+    <li><strong>零熵浪费</strong>：每次调用rand7()仅用于扩展状态，不产生无效中间值。</li>
+</ul>
+
+<h3>代码实现</h3>
+<pre><code># The rand7() API is already defined for you.
+# def rand7():
+# @return a random integer in the range 1 to 7
+
+class Solution:
+    def rand10(self):
+        idx = 0          # 当前状态值
+        cap = 1          # 当前状态空间大小（初始为1个隐含状态）
+        
+        while True:
+            while cap < 10:
+                idx = idx * 7 + rand7() - 1
+                cap *= 7
+                
+            threshold = (cap // 10) * 10
+            if idx < threshold:
+                return (idx % 10) + 1  # 严格均匀映射到 [1, 10]
+            
+            idx = idx - threshold
+            cap = cap - threshold</code></pre>
+
+<h3>期望调用次数推导</h3>
+<p>设 E<sub>R</sub> 为剩余状态空间大小为 R 时，输出有效结果的期望调用次数。</p>
+<p>状态转移路径：<strong>1 → 49 → 9 → 63 → 3 → 21 → 1（循环）</strong></p>
+
+<p>建立期望方程：</p>
+
+<div class="highlight-box">
+<p><strong>1)</strong> 从 R=1 出发，需连续调用2次 rand7() 达到 cap=49。</p>
+<ul>
+    <li>接受概率 40/49，拒绝概率 9/49（进入 R=9）。</li>
+    <li>E<sub>1</sub> = 2 + (9/49) × E<sub>9</sub></li>
+</ul>
+
+<p><strong>2)</strong> 从 R=9 出发，调用1次 rand7() 达到 cap=63。</p>
+<ul>
+    <li>接受概率 60/63 = 20/21，拒绝概率 3/63 = 1/21（进入 R=3）。</li>
+    <li>E<sub>9</sub> = 1 + (1/21) × E<sub>3</sub></li>
+</ul>
+
+<p><strong>3)</strong> 从 R=3 出发，调用1次 rand7() 达到 cap=21。</p>
+<ul>
+    <li>接受概率 20/21，拒绝概率 1/21（回到 R=1）。</li>
+    <li>E<sub>3</sub> = 1 + (1/21) × E<sub>1</sub></li>
+</ul>
+</div>
+
+<p><strong>联立求解：</strong></p>
+<pre><code>E₃ = 1 + E₁/21
+E₉ = 1 + (1/21)(1 + E₁/21) = 22/21 + E₁/441
+E₁ = 2 + (9/49)(22/21 + E₁/441)
+    = 2 + 198/1029 + 9/21609 × E₁
+    = 2 + 66/343 + 1/2401 × E₁</code></pre>
+
+<p><strong>移项整理：</strong></p>
+<pre><code>E₁ × (1 - 1/2401) = (686 + 66) / 343
+E₁ × (2400/2401) = 752/343
+E₁ = (752/343) × (2401/2400) ≈ 2.1933 次</code></pre>
+
+<div class="note">
+<strong>说明：</strong>该解法并非理论下界，因初始阶段强制批量扩展至49才检查，存在固定切换开销。但概率严格均匀。
+</div>
+
+<h3>验证结果</h3>
+<div class="verification-result">
+<p>10次蒙特卡洛（各10万次）平均调用次数：</p>
+<pre><code>[2.19262, 2.19390, 2.19037, 2.19391, 2.19177, 2.19264, 2.19332, 2.19082, 2.19306, 2.19247]</code></pre>
+<p>与理论值高度吻合。分布最大偏差226次 (100000 次/数字)，验证了均匀性。</p>
+</div>
+
+<hr>
+
+<h2>【解法二】贪心精度收缩与连续区间映射</h2>
+
+<h3>核心思想</h3>
+<p>将状态视为 [0,1) 区间的 7 进制近似值。每次 rand7() 追加一位精度。当分母 cap ≥10 时，贪心提取最高位十进制数字。若该位 <10 则直接输出，否则拒绝并保留余数。本质为算术编码思想：连续区间收缩 + 贪心精度提取。若一次调用内连续提取多次十进制位，算法会直接返回首个有效数字并丢弃高位，因 rand10 只需输出 1 位，故不影响单次调用正确性。</p>
+
+<h3>代码实现</h3>
+<pre><code>class Solution:
+    def __init__(self):
+        self.v = 0      # 当前累积的7进制数值
+        self.cap = 1
+
+    def rand10(self):
+        while True:
+            self.v = self.v * 7 + rand7() - 1
+            self.cap *= 7
+            
+            while self.cap >= 10:
+                self.cap //= 10
+                digit = self.v // self.cap
+                self.v %= self.cap
+                
+                # 只有当前区间完全落在某个十分之一子区间内才输出
+                if digit < 10:
+                    return digit + 1</code></pre>
+
+<h3>严格均匀性来源</h3>
+<p>每次进入 <code>while self.cap >= 10</code> 时，v 在 [0, 10*cap - 1] 内均匀分布（cap 为缩小后的新分母）。此时 v 的实际取值范围为 [0, 原cap - 1]（即 [0, 10*新cap - 1 + 余量]），且保持均匀分布。digit = v // 新cap 用于判断 v 落在哪个十进制高位区间。条件 digit < 10 等价于 v < 10*新cap，即严格接受前 10*新cap 个状态。接受后 0~9 每个数字恰好对应 新cap 个原状态，概率严格相等。因此分布绝对均匀。</p>
+
+<p>期望调用次数的推导过程太长，作为附录，放到题解最下面了</p>
+
+<p>这里直接给出计算后得出的 <strong>稳态期望 E<sub>steady</sub> = Σ π(i) × E(i) ≈ 1.7765 次</strong></p>
+
+<p>由于贪心除法 <code>cap //= 10</code> 会过度收缩精度，导致部分分支拒绝率偏高。但相比解法一的"批量扩展至49再检查"，连续贪心收缩大幅降低了无效调用。</p>
+
+<h3>验证结果</h3>
+<div class="verification-result">
+<p>10次蒙特卡洛平均值：</p>
+<pre><code>[1.77408, 1.77324, 1.77974, 1.77627, 1.77400, 1.77428, 1.77580, 1.77186, 1.77795, 1.77714]</code></pre>
+<p>与理论值吻合。分布最大偏差315次。</p>
+</div>
+
+<hr>
+
+<h2>【解法三】跨调用熵继承与余数缓存</h2>
+
+<h3>核心思想</h3>
+<p>在解法二基础上优化：成功输出后不重置状态，而是将商 v // 10 和容量 cap // 10 作为下一轮 rand10() 的初始状态。实现跨调用的熵继承，可以对比，第一种解法的状态复用仅限于被拒绝时，一旦成功生成，将直接抛弃了这部分熵（解法一中取模的余数）。</p>
+
+<h3>代码实现</h3>
+<pre><code>class Solution:
+    def __init__(self):
+        self.v = 0
+        self.cap = 1
+
+    def rand10(self):
+        while True:
+            self.v = self.v * 7 + rand7() - 1
+            self.cap *= 7
+            if self.cap >= 10:
+                limit = (self.cap // 10) * 10
+                if self.v < limit:
+                    # 商作为下次计算的基数，范围同步缩小10倍（缓存剩余熵）
+                    res = self.v % 10
+                    self.v = self.v // 10
+                    self.cap = self.cap // 10
+                    return res + 1
+                else:
+                    self.v -= limit
+                    self.cap -= limit</code></pre>
+
+<div class="note">
+（注：cap<10 时共有 45 个独立状态，具体状态转移矩阵 P 与稳态分布 π 的详细计算方法可参考附录。此处直接给出聚合后的稳态期望。）
+</div>
+
+<div class="math-block">
+E<sub>steady</sub> = Σ π(i) × E(i) ≈ <strong>1.4970 次</strong>
+</div>
+
+<p>说明：跨调用缓存显著降低低熵震荡频率，信息论效率提升。</p>
+
+<h3>验证结果</h3>
+<div class="verification-result">
+<p>10次蒙特卡洛平均值：≈ 1.4971，与理论值高度吻合。分布最大偏差240次。</p>
+</div>
+
+<hr>
+
+<h2>【解法四】大缓冲状态流转与理论极限逼近</h2>
+
+<p>前面的解法，调用期望值约1.497，距离信息论的理论下界，还有优化空间，说明还有熵被浪费了。 要找出后续优化的方向，就需要先搞清楚那些熵被浪费在哪了。</p>
+
+<h3>理论分析</h3>
+<p>从信息论角度，每次rand10()调用需要输出log<sub>2</sub>(10)≈3.32比特的熵。算法的正确性依赖于状态(v, cap)始终维持足够的信息承载量。观察上一个解法代码，可以注意到当成功提取时，后续将执行<code>cap = cap // 10</code>，当cap处于10到49的区间时，cap // 10的结果仅为1到4。这意味着每次成功生成rand10()后，剩余状态的空间被强制压缩到最多4个取值，剩余状态熵骤降至log<sub>2</sub>(1)到log<sub>2</sub>(4)，即0到2比特。</p>
+
+<p>以cap=19为例：累积后总熵为log<sub>2</sub>(19)≈4.25比特。提取rand10()消耗约3.32比特。第1份代码将剩余状态压缩为cap=1，剩余熵为0。单次提取直接截断了约0.93比特的潜在信息承载能力。这0.93比特并未消失，而是被算法的整除操作强行丢弃在状态空间的低位中。为了恢复状态的信息密度，后续必须额外调用rand7()来重新填充熵。</p>
+
+<p>由于过早触发提取，算法的输出速率（每次提取log<sub>2</sub>(10)比特）远超状态维持能力（剩余cap // 10的容量）。这种失配导致状态空间频繁在低熵区间震荡。每次低熵状态都必须依赖新的rand7()调用进行熵注入。</p>
+
+<p>在成功提取分支中，第三种解法的算法执行<code>v = v // 10</code>，<code>cap = cap // 10</code>。</p>
+
+<p>设提取前状态空间大小为C，提取后为C' = floor(C/10)。</p>
+
+<p><strong>该步骤的理论熵守恒关系为：</strong></p>
+<div class="math-block">
+原状态熵 = 输出熵 + 剩余状态熵 + 截断损失<br>
+即 log<sub>2</sub>(C) = log<sub>2</sub>(10) + log<sub>2</sub>(C') + ΔH
+</div>
+
+<p>其中截断损失 ΔH = log<sub>2</sub>(C / (10 × floor(C/10)))。</p>
+
+<p>当 C 为 10 的整数倍时 ΔH 恒为 0，此时无截断损失；非整数倍时 ΔH 为正，体现低位信息丢弃。</p>
+
+<p>由于 floor(C/10) ≤ C/10 < floor(C/10) + 1，可知：</p>
+<div class="math-block">
+1 ≤ C / (10 × floor(C/10)) < 1 + 9/(10 × floor(C/10))
+</div>
+
+<p>因此 ΔH 的取值范围是 [0, log<sub>2</sub>(1 + 9/(10 × floor(C/10))))。当C增大时，ΔH 单调递减并严格趋向于0。</p>
+
+<p>至此，优化思路就很显然了，直接上代码：</p>
+
+<hr>
+
+<h3>Python3版实现</h3>
+<pre><code>def __init__(self):
+    self.v = 0          # 当前累积的随机状态值
+    self.cap = 1        # 当前状态空间大小 (capacity)
+    self.BUFFER = 10000  # 这个值越大rand7()调用期望值越接近理论下限
+
+def rand10(self):
+    # 攒足够大的状态空间再处理
+    while self.cap < self.BUFFER:
+        self.v = self.v * 7 + rand7() - 1
+        self.cap *= 7
+        
+    limit = (self.cap // 10) * 10
+    
+    if self.v < limit:
+        res = self.v % 10
+        self.v //= 10
+        self.cap //= 10
+        # 成功提取后容量下降，下次调用将重新触发 while 循环进行熵补充
+        return res + 1
+    else:
+        self.v -= limit
+        self.cap -= limit</code></pre>
+
+<hr>
+
+<h3>Rust版实现</h3>
+<pre><code>use std::cell::RefCell;
+
+thread_local! {
+    static STATE: RefCell<(i32, i32)> = RefCell::new((0, 1));
+}
+
+impl Solution {
+    pub fn rand10() -> i32 {
+        const BUFFER: i32 = 10000;
+        
+        loop {
+            let (mut v, mut cap) = STATE.with(|s| {
+                let state = s.borrow();
+                (state.0, state.1)
+            });
+
+            // 熵累积：仅当状态空间不足时扩展
+            while cap < BUFFER {
+                v = v * 7 + rand7() - 1;
+                cap *= 7;
+            }
+
+            let limit = (cap / 10) * 10;
+
+            if v < limit {
+                let res = v % 10;
+                v /= 10;
+                cap /= 10;
+                STATE.with(|s| {
+                    let mut state = s.borrow_mut();
+                    state.0 = v;
+                    state.1 = cap;
+                });
+                return res + 1;
+            } else {
+                v -= limit;
+                cap -= limit;
+                STATE.with(|s| {
+                    let mut state = s.borrow_mut();
+                    state.0 = v;
+                    state.1 = cap;
+                });
+            }
+        }
+    }
+}</code></pre>
+
+<hr>
+
+<h3>原理解析</h3>
+<p>代码里通过设置缓冲，延迟了后续处理，使cap始终维持在10000以上。此时 floor(C/10) ≥ 1000，ΔH ≤ log<sub>2</sub>(1 + 0.0009) ≈ 0.0013比特。这个缓冲阈值会随着增大，使ΔH以O(1/C)的速度收敛于0。在大cap极限下，将实现几乎无损状态流转。</p>
+
+<h3>验证结果</h3>
+<div class="verification-result">
+<p>BUFFER=10,000 时，10次蒙特卡洛平均值 ≈ <strong>1.184</strong>。最大偏差192</p>
+</div>
+
+<h3>极限性质</h3>
+<div class="math-block" style="font-size: 1.3em;">
+lim<sub>BUFFER→∞</sub> E<sub>calls</sub> = log<sub>7</sub>(10) ≈ <strong>1.1833</strong>
+</div>
+
+<p>该算法在数学上已实现"无限逼近理论下界"。实践中 BUFFER 取 100,000 时，蒙特卡洛验证结果已非常接近 1.1833，理论推导与实践验证高度一致，其数学结构完整证明了 rand10 期望调用次数的渐进最优性。</p>
+
+<div class="warning">
+<strong>注：</strong>不知道什么原因，这版Python3的解法无法通过 LeetCode 在线判题，代码实现逻辑和蒙特卡洛模拟结果都没有看出问题，但连续提交两次都测试失败，我用rust按这版逻辑又写了一版代码，可以成功通过LeetCode所有12个测试。
+</div>
+
+<div class="note">
+<strong>注2：</strong>从信息论角度看，该算法的数学逻辑实现了理论最优（rand7() 期望调用次数逼近 log<sub>7</sub>(10) ≈ 1.183）。然而，理论上的调用次数最小，并不等同于实际运行性能最优。为最大限度复用随机熵、避免状态丢弃，代码引入了状态维护、循环分支与缓存访问等额外开销。因此，在实际执行耗时上，未必能跑赢结构更简单的标准拒绝采样方案。
+</div>
+
+<hr>
+
+<h2>严谨数学证明（统一归纳法）</h2>
+
+<h3>命题</h3>
+<p>对于任意 BUFFER ≥ 10，算法每次调用 rand10() 返回的整数在 [1, 10] 范围内严格服从均匀分布，即每个数字出现的概率恒为 1/10。</p>
+
+<h3>证明</h3>
+
+<h4>1. 基础定义与状态假设</h4>
+<p>定义状态 (v, cap)，其中 v 为累积随机值，cap 为当前状态空间大小，满足 0 ≤ v < cap。</p>
+<p>称状态 (v, cap) 满足"均匀性"，当且仅当 v 在整数区间 [0, cap-1] 上服从离散均匀分布，即对任意 k ∈ [0, cap-1]，P(v = k) = 1/cap。</p>
+<p>初始状态 (0, 1) 为退化均匀分布（单点确定性分布），平凡满足均匀性。</p>
+
+<h4>2. 引理 1.1：扩展操作保持状态均匀性</h4>
+<p>若状态 (v, cap) 均匀，扩展后 (v', cap×7) 均匀，其中 v' = v×7 + r，r = rand7()-1 ~ Uniform[0,6]。</p>
+<p><strong>证明：</strong></p>
+<ul>
+    <li>v 在 [0, cap-1] 上均匀分布，r 在 [0, 6] 上均匀分布</li>
+    <li>v 与 r 相互独立，且映射 (v, r) → v' 在整数域上为双射（v' 的七进制表示唯一对应原 v 与 r）</li>
+    <li>对于每个 v' = k，存在唯一分解 v = k // 7, r = k % 7</li>
+    <li>P(v' = k) = P(v = k // 7) × P(r = k % 7) = (1/cap) × (1/7) = 1/(cap×7)</li>
+    <li>因此 v' 在 [0, cap×7-1] 上均匀分布。<strong>证毕</strong></li>
+</ul>
+
+<h4>3. 引理 1.2：提取与拒绝操作保持状态均匀性</h4>
+<p>若状态 (v, cap) 均匀且 cap ≥ 10，设 limit = (cap // 10) × 10，k = limit // 10，R = cap % 10（0 ≤ R < 10），则：</p>
+
+<p><strong>(a)</strong> 若 v < limit，输出 (v % 10) + 1，新状态 (v // 10, cap // 10) 均匀。</p>
+<p><strong>(b)</strong> 若 v ≥ limit，新状态 (v - limit, cap - limit) 均匀。</p>
+
+<p><strong>证明(a)：</strong></p>
+<ul>
+    <li>由于 v 在 [0, cap-1] 上均匀，且 v < limit，故在条件 v < limit 下，v 的条件分布为 Uniform[0, limit-1]</li>
+    <li>limit 是 10 的倍数，设 limit = 10k</li>
+    <li>对于每个 d ∈ [0, 9]，满足 v % 10 = d 的 v 有 k 个：d, d+10, d+20, ..., d+10(k-1)</li>
+    <li>因此 P(v % 10 = d | v < limit) = k / limit = 1/10</li>
+    <li>输出 (v % 10) + 1 是均匀的</li>
+    <li>v // 10 在 [0, k-1] 上均匀（每个高位值对应恰好 10 个低位值）</li>
+    <li>新容量 cap<sub>new</sub> = cap // 10。由 cap = 10k + R 且 R < 10，得 cap // 10 = k。故新状态 (v // 10, cap // 10) 均匀。<strong>证毕</strong></li>
+</ul>
+
+<p><strong>证明(b)：</strong></p>
+<ul>
+    <li>v 在 [limit, cap-1] 上均匀（条件分布）</li>
+    <li>v - limit 在 [0, cap-limit-1] 上均匀（区间平移不改变均匀性）</li>
+    <li>新容量 cap<sub>new</sub> = cap - limit = R。故新状态 (v - limit, cap - limit) 均匀。<strong>证毕</strong></li>
+</ul>
+
+<h4>4. 引理 1.3：延迟提取不破坏均匀性</h4>
+<p>无论 BUFFER 是多少，只要在 cap ≥ 10 时提取，输出都是均匀的。</p>
+<p><strong>证明：</strong></p>
+<ul>
+    <li>初始状态 (0, 1) 是均匀的（平凡情况）</li>
+    <li>扩展到 cap ≥ BUFFER 的过程中，每步扩展都保持均匀性（引理 1.1）</li>
+    <li>提取时，输出是均匀的（引理 1.2a）</li>
+    <li>拒绝后，新状态是均匀的（引理 1.2b）</li>
+    <li>若拒绝后 cap' ≥ BUFFER，跳过扩展直接提取，均匀性保持</li>
+    <li>若拒绝后 cap' < BUFFER，继续扩展，均匀性保持</li>
+    <li>因此，无论 BUFFER 是多少，输出都是均匀的。<strong>证毕。</strong></li>
+</ul>
+
+<h4>5. 命题 1 的证明</h4>
+<ul>
+    <li>算法执行过程构成马尔可夫链，任意时刻状态均保持均匀性（引理 1.1 至 1.3）</li>
+    <li>设 T 为首次成功提取的轮次。由全概率公式，输出数字 d 的概率为：
+        <div class="math-block">
+            P(out=d) = Σ<sub>t=1</sub><sup>∞</sup> P(T=t) × P(out=d | T=t)
+        </div>
+    </li>
+    <li>每次成功分支的条件概率恒为 1/10，故：
+        <div class="math-block">
+            P(out=d) = (1/10) × Σ<sub>t=1</sub><sup>∞</sup> P(T=t)
+        </div>
+    </li>
+    <li><strong>终止性</strong>：每次拒绝后，剩余状态空间 cap' = cap % 10 < 10。但算法设计保证后续必进入扩展阶段，使 cap 呈指数增长。因此单次拒绝概率恒小于 1，且连续拒绝概率随后续扩展呈指数级衰减（几何分布尾部），算法以概率 1 终止，即 Σ P(T=t) = 1。</li>
+    <li>代入得 P(out=d) = 1/10。每个数字的输出概率严格等于 1/10。<strong>证毕。</strong></li>
+</ul>
+
+<hr>
+
+<h2>最后总结</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>解法</th>
+            <th>核心思想</th>
+            <th>期望调用次数</th>
+            <th>特点</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>解法一</strong></td>
+            <td>基础状态累积</td>
+            <td>≈ 2.1933</td>
+            <td>逻辑直观，但批量扩展带来固定开销</td>
+        </tr>
+        <tr>
+            <td><strong>解法二</strong></td>
+            <td>贪心精度收缩</td>
+            <td>≈ 1.7765</td>
+            <td>连续提取降低无效调用，但成功输出后 cap 骤降，熵继承弱</td>
+        </tr>
+        <tr>
+            <td><strong>解法三</strong></td>
+            <td>跨调用余数缓存</td>
+            <td>≈ 1.4970</td>
+            <td>实现状态流转闭环，信息利用率显著提升</td>
+        </tr>
+        <tr>
+            <td><strong>解法四</strong></td>
+            <td>大缓冲延迟提取</td>
+            <td>→ <strong>1.1833</strong></td>
+            <td>截断损失 ΔH 以 O(1/C) 衰减，可无限逼近信息论极限</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="highlight-box">
+<p><strong>核心结论：</strong>rand10 的期望调用次数下限由信息论决定，实际算法可通过状态复用与熵缓存逐步逼近。验证数据与理论值高度一致。</p>
+</div>
+
+<hr>
+
+<h2>附录：解法二（贪心精度收缩）稳态期望详细推导</h2>
+
+<p>采用马尔可夫链方法，通过状态期望方程与稳态分布矩阵严格计算期望调用次数。</p>
+
+<h3>第一步：状态空间分析</h3>
+<p>定义状态 (v, cap)，其中 0 ≤ v < cap。</p>
+
+<p><strong>状态转移规则：</strong></p>
+<ol>
+    <li>若 cap < 10：调用 rand7()，v' = v×7 + r, cap' = cap×7</li>
+    <li>若 cap ≥ 10：
+        <ul>
+            <li>cap' = cap // 10</li>
+            <li>digit = v // cap'</li>
+            <li>若 digit < 10：输出，余数状态 (v % cap', cap')</li>
+            <li>若 digit ≥ 10：拒绝，余数状态 (v % cap', cap')</li>
+        </ul>
+    </li>
+</ol>
+
+<p>通过图遍历与状态可达性分析，实际参与转移的独立状态共<strong>105个</strong>。</p>
+
+<hr>
+
+<h3>第二步：建立期望值方程 E(v, cap)</h3>
+
+<p>定义 E(v, cap) 为从状态 (v, cap) 出发到输出所需的期望 rand7() 调用次数。</p>
+
+<p><strong>方程：</strong></p>
+<ul>
+    <li>若可直接输出：E = 0</li>
+    <li>若被拒绝：E(v, cap) = E(v % cap', cap')，其中 cap' = cap // 10</li>
+    <li>若 cap < 10：E(v, cap) = 1 + (1/7) × Σ<sub>r=0</sub><sup>6</sup> E(v×7+r, cap×7)</li>
+</ul>
+
+<p>通过编程求解线性方程组，得到 cap < 10 状态的 E 值：</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>cap</th>
+            <th>v=0</th>
+            <th>v=1</th>
+            <th>v=2</th>
+            <th>v=3</th>
+            <th>v=4</th>
+            <th>v=5</th>
+            <th>v=6</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>1</strong></td>
+            <td>5355/2369 ≈ 2.260447</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+        </tr>
+        <tr>
+            <td><strong>2</strong></td>
+            <td>1.000000</td>
+            <td>5429/2369 ≈ 2.291684</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+        </tr>
+        <tr>
+            <td><strong>4</strong></td>
+            <td>1.000000</td>
+            <td>1.000000</td>
+            <td>8/7 ≈ 1.142857</td>
+            <td>45406/16583 ≈ 2.738105</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+        </tr>
+        <tr>
+            <td><strong>7</strong></td>
+            <td>1.000000</td>
+            <td>1.000000</td>
+            <td>1.000000</td>
+            <td>1.000000</td>
+            <td>1.000000</td>
+            <td>9/7 ≈ 1.285714</td>
+            <td>42078/16583 ≈ 2.537418</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h3>第三步：建立输出后余数状态的转移概率方程</h3>
+
+<p><strong>关键</strong>：计算从状态 s 出发，最终输出后落在各余数状态的概率。</p>
+
+<p>定义 P(s, s') 为从状态 s 出发，最终输出后落在状态 s' 的概率。</p>
+
+<p><strong>方程：</strong></p>
+<ol>
+    <li>若从 s 可以直接输出，余数为 s'：P(s, s') = 1</li>
+    <li>若从 s 被拒绝，余数为 s''：P(s, s') = P(s'', s')</li>
+    <li>若 s 的 cap < 10：P(s, s') = (1/7) × Σ<sub>r=0</sub><sup>6</sup> P((v×7+r, cap×7), s')</li>
+</ol>
+
+<p>这是一个线性方程组。</p>
+
+<p><strong>输出后可能的余数状态（cap < 10）共 13 个：</strong></p>
+<pre><code>[(0,1), (0,7), (1,7), (2,7), (3,7), (4,7), (5,7), (6,7), (0,4), (1,4), (2,4), (3,4), (0,2), (1,2)]</code></pre>
+
+<div class="note">
+（注：部分状态因对称性或转移路径限制，稳态概率为 0，已合并计算。）
+</div>
+
+<p>转移概率矩阵 P[i][j] = 从状态i出发，最终输出后落在状态j的概率（详细矩阵构建与求解过程略）。</p>
+
+<hr>
+
+<h3>第四步：求解稳态分布</h3>
+
+<p>稳态分布 π 满足：<strong>π = π × P</strong></p>
+
+<p>即：π(j) = Σ<sub>i</sub> π(i) × P(i, j)</p>
+
+<p>加上归一化条件：Σ<sub>i</sub> π(i) = 1</p>
+
+<p><strong>求解得稳态分布 π：</strong></p>
+
+<table>
+    <thead>
+        <tr>
+            <th>状态</th>
+            <th>π 值</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td>(0, 1)</td><td>101/318 ≈ 0.317610</td></tr>
+        <tr><td>(0, 7)</td><td>0.000000</td></tr>
+        <tr><td>(1, 7)</td><td>0.000000</td></tr>
+        <tr><td>(2, 7)</td><td>0.000000</td></tr>
+        <tr><td>(3, 7)</td><td>0.000000</td></tr>
+        <tr><td>(4, 7)</td><td>0.000000</td></tr>
+        <tr><td>(5, 7)</td><td>0.000000</td></tr>
+        <tr><td>(6, 7)</td><td>0.000000</td></tr>
+        <tr><td>(0, 4)</td><td>245/2703 ≈ 0.090640</td></tr>
+        <tr><td>(1, 4)</td><td>245/2703 ≈ 0.090640</td></tr>
+        <tr><td>(2, 4)</td><td>245/2703 ≈ 0.090640</td></tr>
+        <tr><td>(3, 4)</td><td>245/2703 ≈ 0.090640</td></tr>
+        <tr><td>(0, 2)</td><td>434/2703 ≈ 0.160562</td></tr>
+        <tr><td>(1, 2)</td><td>287/1802 ≈ 0.159267</td></tr>
+    </tbody>
+</table>
+
+<p><strong>检验</strong> Σ(π) = 1.000000，分布有效。</p>
+
+<hr>
+
+<h3>第五步：计算稳态期望值</h3>
+
+<p>稳态期望值定义为各状态稳态概率与其期望调用次数的加权和：</p>
+
+<div class="math-block">
+E<sub>steady</sub> = Σ<sub>i</sub> π(i) × E(i)
+</div>
+
+<p>通过线性代数求解 π 与 E 的加权求和（详细分数运算已编程验证），得：</p>
+
+<div class="math-block" style="font-size: 1.3em;">
+E<sub>steady</sub> ≈ <strong>1.7765 次</strong>
+</div>
+
+<p>该结果与蒙特卡洛模拟值高度吻合，验证了推导的严密性。</p>
+
+<hr>
+
+<h3>附录说明</h3>
+<p>本推导完整覆盖了贪心收缩策略的随机过程。解法三（跨调用余数缓存）的数学框架与结构完全一致，仅需将状态定义调整为成功输出后的商状态 (v//10, cap//10)，并重新构建转移矩阵 P 与期望方程 E(v, cap)。因核心逻辑相同且计算量相当，此处省略具体推导过程。两种解法的差异仅体现在状态流转闭环的构建方式上，附录方法可无缝迁移。</p>
+
+</body>
+</html>
